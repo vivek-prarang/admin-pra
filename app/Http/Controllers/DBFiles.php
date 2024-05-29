@@ -28,7 +28,7 @@ class DBFiles extends Controller
     function loadImages($imageId){
         // return 1;s
          $imagePath = 'public/images/' . $imageId;
-
+        
         if (Storage::exists($imagePath)) {
             return response()->file(Storage::path($imagePath));
         } else {
