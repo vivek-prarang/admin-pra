@@ -17,26 +17,30 @@ class ImportTable extends Component
     public $message;
     public $ignorebtn = false;
     public $ignoreIt=[];
+    public $processing = false;
     protected $rules = [
         'file' => 'required|file|mimes:csv,txt',
     ];
     public $importBtn=false;
     public function ignore(){
+        $this->processing = true;
         $this->message[] ="Ignored and prossed to next step.";
         $this->ignorebtn = false;
         $this->ignoreIt= $this->mismatchingFields;  
         $this->importBtn=true;
-        $this->updatedFile();     
+        $this->updatedFile();  
+        $this->processing = false;   
     }
     public function updatedFile()
     {   
         // $this->message= [];
-        
+        $this->processing = True;
         $this->validate();
 
         // Check if the file name matches the table name
         if ($this->file->getClientOriginalName() !== "{$this->tableName}.csv") {
             $this->message[] = 'Please Select Correct file with extantation.';
+            $this->processing = false;
             return;
         }      
         $fields = DB::table('verticalsname')->where('table_name', $this->tableName)->pluck('id')->toArray();
@@ -66,9 +70,11 @@ class ImportTable extends Component
                 $this->message[] = implode(', ', $mismatchingFields) . " not in table.";
                 if(count($toMatchedArray) !=count($fields) && !empty($this->ignoreIt)){
                     $this->message[] = "There are some fields in the file that are not in the table.";
+                    $this->processing = false;
                     return;
                }
                 $this->ignorebtn = true;
+                $this->processing = false;
                 return;
             }
             $this->importBtn=true;
@@ -87,6 +93,7 @@ class ImportTable extends Component
             if (count($differences) > 0) {
                 $this->message[] = 'There are differences between the imported file and the existing data.';
             }
+            $this->processing = false;
         }
     }
     private function parseCsv($filePath)
@@ -148,6 +155,7 @@ class ImportTable extends Component
     }
     public function import()
     {    
+        $this->processing = True;
         $csvData = array_map('str_getcsv', file($this->file->getRealPath()));
         $header = array_shift($csvData);
         $this->importBtn=false;
@@ -157,6 +165,7 @@ class ImportTable extends Component
             
         } catch (\Exception $e) {
             $this->message[] = 'Error: ' . $e->getMessage();
+            $this->processing = false;
             return;
         }
     
@@ -177,9 +186,12 @@ class ImportTable extends Component
     
             $this->message[] = 'New Data Imported successfully';
             $this->file = null;
+            $this->diff=[];
+            $this->processing = false;
             return;
         } catch (\Exception $e) {
             $this->message[] = 'Error: ' . $e->getMessage();
+            $this->processing = false;
             return;
         } 
     }

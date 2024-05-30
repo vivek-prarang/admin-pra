@@ -9,6 +9,8 @@ class TableName extends Component
     public $tableName;
     public function render()
     {
+
+        
         return view('livewire.table-name');
     }
 }
